@@ -1,9 +1,7 @@
 import Image from "next/image";
 import styles from "./page.module.css";
-import { main } from "./solananft";
 
 export default function Home() {
-  main();
   return (
     <main className={styles.main}>
       <div className={styles.description}>

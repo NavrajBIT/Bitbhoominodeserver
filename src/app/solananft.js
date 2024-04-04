@@ -7,20 +7,19 @@ import { Connection, clusterApiUrl, Keypair, PublicKey } from "@solana/web3.js";
 import bs58 from "bs58";
 import { TokenStandard } from "@metaplex-foundation/mpl-token-metadata";
 
-const secret =
-  "Input the Secret Key";
+const secret = process.env.NEXT_PRIVATE_KEY;
+console.log(secret);
 
-const NODE_RPC = clusterApiUrl("mainnet-beta");
+// const NODE_RPC = clusterApiUrl("devnet");
+const NODE_RPC =
+  "https://solana-devnet.g.alchemy.com/v2/SSqT4TgPt0cWnqyRdJl8AgbyR0HVoi-N";
 const SOLANA_CONNECTION = new Connection(NODE_RPC);
 
 const WALLET = Keypair.fromSecretKey(bs58.decode(secret));
-console.log(WALLET);
 
 const METAPLEX = Metaplex.make(SOLANA_CONNECTION)
   .use(keypairIdentity(WALLET))
-  .use(
-    irysStorage()
-  );
+  .use(irysStorage());
 
 const CONFIG = {
   uploadPath: "uploads/",
@@ -83,7 +82,8 @@ export async function mintNft(metadataUri, name, sellerFeeBasisPoints, symbol) {
     // console.log("nft", nft);
     // const nftAddress = nft.address;
     // console.log(nftAddress);
-    let { signature, confirmResponse } = await METAPLEX.rpc().sendAndConfirmTransaction(transactionBuilder);
+    let { signature, confirmResponse } =
+      await METAPLEX.rpc().sendAndConfirmTransaction(nft);
 
     console.log(
       `Minted NFT: https://explorer.solana.com/address/${nftAddress}?cluster=mainnet-beta`
@@ -108,7 +108,7 @@ export async function mintNft(metadataUri, name, sellerFeeBasisPoints, symbol) {
     //     });
     //     console.log("signature", signature);
     //     console.log("confirmResponse", confirmResponse);
-    
+
     //     console.log(
     //       `Minted NFT: https://explorer.solana.com/address/${nftAddress}?cluster=mainnet-beta`
     //     );
@@ -141,7 +141,9 @@ export async function transferNft(nftAddress, recipientAddress) {
     if (res.value.err) {
       throw new Error("failed to confirm transfer transaction");
     }
-    console.log(`   Tx: https://explorer.solana.com/tx/${sig}?cluster=mainnet-beta`);
+    console.log(
+      `   Tx: https://explorer.solana.com/tx/${sig}?cluster=mainnet-beta`
+    );
     console.log(
       `Transferred NFT ${nftAddress} to recipient ${recipientAddress}`
     );
@@ -153,26 +155,27 @@ export async function transferNft(nftAddress, recipientAddress) {
 }
 
 // Call the functions sequentially
-export async function main() {
+export async function main(recipient) {
   try {
     const imgUri =
       "https://d2fggdczigjbd1.cloudfront.net/ipfs/QmQRv6iENv9FeTz8gLD6eZsGPUDbJ6dH8zmLMf6gmmTT5j";
-    const metadataUri = await uploadMetadata(
-      imgUri,
-      CONFIG.imgType,
-      CONFIG.imgName,
-      CONFIG.description,
-      CONFIG.attributes
-    );
+    const metadataUri =
+      "https://nftree.s3.ap-south-1.amazonaws.com/static/metadata.json";
+    // const metadataUri = await uploadMetadata(
+    //   imgUri,
+    //   CONFIG.imgType,
+    //   CONFIG.imgName,
+    //   CONFIG.description,
+    //   CONFIG.attributes
+    // );
+    console.log("minting...");
     const nft = await mintNft(metadataUri, "MyNFT", 500, "NFT");
     console.log("nft:", nft);
     const nftAddress = nft.address;
     console.log("NFT minted successfully:", nftAddress);
     const authority = nft.mint.mintAuthorityAddress;
     console.log("authority", authority);
-    const recipientAddress = new PublicKey(
-      "4RW1m9yj5W52nxMMF1F4rhztFdqVxo3MYa2jMioAFgJT"
-    );
+    const recipientAddress = new PublicKey(recipient);
     await transferNft(nftAddress, recipientAddress);
     console.log("NFT transferred successfully");
   } catch (error) {
